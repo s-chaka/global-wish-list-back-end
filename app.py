@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from flask_pymongo import PyMongo ,ObjectId
-import pymongo
+# import pymongo
 import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -17,93 +17,17 @@ client = MongoClient(connection_string)
 db = client.global_wish_list
 users = db.users_collection
 
-@app.route('/users', methods=['GET'])
-def get_all_users():
-    users = db.users_collection
-    output =[]
-    for q in users.find():
-        output.append({'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
-                    'password':q['password'], 'address':q['address'], 'wish':q['wish'], 'story':q['story']})
-    return jsonify({'result': output})
-
-
-@app.route('/users/<first_name>', methods=['GET'])
-def get_one_user(first_name):
-    users = db.users_collection
-    q = users.find_one({'first_name':first_name})
-    if q:
-        output ={'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-                    'password':q['password'], 'address':q['address'], 'wish':q['wish'],'story':q['story']}
-    else:
-        output = "No result found"
-    return jsonify({'result': output})
-
-
-@app.route('/users', methods=['POST'])
-def create_user():
-    users = db.users_collection
-    first_name = request.json['first_name']
-    last_name = request.json['last_name']
-    email = request.json['email']
-    password =request.json['password']
-    wish = request.json['wish']
-    story = request.json['story']
-    address = request.json['address']
-    
-    
-    users_id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
-        'password':password,'address':address, 'wish':wish, 'story': story}).inserted_id
-    
-    new_user = users.find_one({'_id': users_id})
-    
-    output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email': new_user['email'],
-        'password':new_user['password'], 'address':new_user['address'], 'wish':new_user['wish'], 'story':new_user['story']}
-    
-    return jsonify({'result': output})
-
-@app.route('/users/<id>', methods=['DELETE'])
-def delete_user(id):
-    users = db.users_collection
-    users.delete_one({'_id': ObjectId(id)})
-    return jsonify({'result': 'user deleted  successfully'})
-
-
-@app.route('/users/<id>', methods=['PUT'])
-def update_user(id):
-    users = db.users_collection
-    
-    _id = id
-    first_name = request.json['first_name']
-    last_name = request.json['last_name']
-    email = request.json['email']
-    password =request.json['password']
-    address = request.json['address']
-    wish = request.json['wish']
-    story = request.json['story']
-    
-    if first_name and last_name and email and _id and password and address and request.method =='PUT':
-        users.update_one({
-            '_id': ObjectId(_id['$oid']) if '$oid' in _id else ObjectId(_id)}, {'$set': {'first_name': first_name, 
-            'last_name': last_name, 'email':email, 'password': password, 'address': address, 'wish': wish, 'story':story
-            }}
-        )
-        return jsonify({'result': 'user updated successfully'})
-    else:
-        return jsonify({'result': 'not found'})
-
 
 if __name__ == '__main__':
     app.run(debug=True)
 
 
 
-#Import Modles
-
+from user import routes
 
 #Register Blueprints 
-from user.routes import signup_bp, signin_bp
-app.register_blueprint(signup_bp)
-app.register_blueprint(signin_bp)
+from user.routes import users_bp
+app.register_blueprint(users_bp)
 
 
 
