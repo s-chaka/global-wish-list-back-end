@@ -25,9 +25,12 @@ if __name__ == '__main__':
 
 from user import routes
 
-#Register Blueprints 
-from user.routes import users_bp
-app.register_blueprint(users_bp)
+# Register Blueprints 
+# from user.routes import users_bp
+# app.register_blueprint(users_bp)
+
+
+
 
 
 

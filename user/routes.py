@@ -5,12 +5,22 @@ from app import app
 from user.models import User
 # from bson import objectID
 
+# Blueprint
+# users_bp = Blueprint('users', __name__)
+# @users_bp.route('/users', methods=['POST']) 
 
-# Blueprints
-users_bp = Blueprint('users', __name__, url_prefix="/users")
 
-
-# @users_bp.route('/users', methods=['POST']) # not working
+# helper function
+def find_user(field,value ):
+    users = db.users_collection
+    output =[]
+    for q in users.find({field:value}):
+        output.append({'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
+                    'address':q['address'],'wish_list':q['wish_list'],'story':q['story']})
+    if output:
+        return jsonify({'result': output})
+    else:
+        return jsonify({'result': "No result found"})
 
 # create user 
 @app.route('/users', methods=['POST'])
@@ -33,7 +43,7 @@ def create_user():
     output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email': new_user['email'],
         'password':new_user['password'], 'address':new_user['address'], 'wish_list':new_user['wish_list'], 'story':new_user['story']}
     
-    return jsonify({'result': output})
+    return jsonify({'result': 'user created successfully'})
 
 #get all users information
 @app.route('/users', methods=['GET'])
@@ -58,37 +68,22 @@ def get_all_users_names():
 #get all users by country 
 @app.route('/users/<country>', methods=['GET'])
 def get_all_users_by_country(country):
-    users = db.users_collection
-    output =[]
-    for q in users.find({'address.country': country}):
-        output.append({'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-                    'address':q['address'],'wish_list':q['wish_list'],'story':q['story']})
-    return jsonify({'result': output})
+    result = find_user('address.country', country)
+    return result
 
 
 # get one user by first name
-@app.route('/users/<first_name>', methods=['GET'])
+@app.route('/users/fname/<first_name>', methods=['GET'])
 def get_one_user_by_first_name(first_name):
-    users = db.users_collection
-    q = users.find_one({'first_name':first_name})
-    if q:
-        output ={'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-                    'address':q['address'], 'wish_list':q['wish_list'],'story':q['story']}
-    else:
-        output = "No result found"
-    return jsonify({'result': output})
+    result = find_user('first_name', first_name)
+    return result
+
 
 # get one user by last name
-@app.route('/users/<last_name>', methods=['GET'])
+@app.route('/users/lname/<last_name>', methods=['GET'])
 def get_one_user_by_last_name(last_name):
-    users = db.users_collection
-    q = users.find_one({'last_name':last_name})
-    if q:
-        output ={'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-                    'password':q['password'], 'address':q['address'], 'wish_list':q['wish_list'],'story':q['story']}
-    else:
-        output = "No result found"
-    return jsonify({'result': output})
+    result = find_user('last_name', last_name)
+    return result
 
 
 
@@ -103,7 +98,6 @@ def delete_user(id):
 @app.route('/users/<id>', methods=['PUT'])
 def update_user(id):
     users = db.users_collection
-    
     _id = id
     first_name = request.json['first_name']
     last_name = request.json['last_name']
@@ -130,21 +124,18 @@ def update_user(id):
 
 
 
+    # users = db.users_collection
+    # q = users.find_one({'first_name':first_name})
+    # if q:
+    #     output ={'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
+    #                 'address':q['address'], 'wish_list':q['wish_list'],'story':q['story']}
+    # else:
+    #     output = "No result found"
+    # return jsonify({'result': output})
 
 
 
 
-#     first_names= ['Tomas', 'Sara', 'Jose', 'Brad', 'Allen']
-#     last_names= ['Smith', 'Bart', 'Pit', 'Cater', 'Geral']
-#     eimals = ['tomas@gmail.com','sara@gmail.com','jose@gmail.com','brad@gmail.com','allen@gmail.com']
-#     passwords= ['password1','password2','password3','password4','password5']
-#     addresses = [ 
-#             {'country':'USA', 'city_name': 'new york', 'street_address': '1234 main street'},
-#             {'country':'Uganda', 'city_name': 'new city', 'street_address': '8888 main street'},
-#             {'country':'Canada', 'city_name': 'another city', 'street_address': '9999 main street'},
-#             {'country':'USA', 'city_name': 'city', 'street_address': '1212 main street'},
-#             {'country': 'South Africa','city_name': 'city', 'street_address': '5151 main street'}
-#             ]
 
 # @signup_bp.route('', methods=["POST"])
 # def signup():
