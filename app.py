@@ -7,7 +7,10 @@ import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
 
+
+
 app = Flask(__name__)
+# app.config['CORS_HEADERS'] = 'Content-Type'
 CORS(app)
 
 password = os.environ.get("MONGODB_PWD")
@@ -24,6 +27,8 @@ if __name__ == '__main__':
 
 
 from user import routes
+
+
 
 # Register Blueprints 
 # from user.routes import users_bp

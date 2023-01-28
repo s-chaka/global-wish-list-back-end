@@ -3,7 +3,7 @@ from flask_pymongo import PyMongo, ObjectId
 from app import db
 from app import app
 from user.models import User
-# from bson import objectID
+from werkzeug.security import generate_password_hash, check_password_hash
 
 # Blueprint
 # users_bp = Blueprint('users', __name__)
@@ -16,7 +16,7 @@ def find_user(field,value ):
     output =[]
     for q in users.find({field:value}):
         output.append({'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-                    'address':q['address'],'wish_list':q['wish_list'],'story':q['story']})
+                    'address':q['address']})
     if output:
         return jsonify({'result': output})
     else:
@@ -26,22 +26,17 @@ def find_user(field,value ):
 @app.route('/users', methods=['POST'])
 def create_user():
     users = db.users_collection
+    
     first_name = request.json['first_name']
     last_name = request.json['last_name']
     email = request.json['email']
     password =request.json['password']
-    wish_list = request.json['wish_list']
-    story = request.json['story']
     address = request.json['address']
     
-    
-    users_id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
-        'password':password,'address':address, 'wish_list':wish_list, 'story': story}).inserted_id
-    
-    new_user = users.find_one({'_id': users_id})
-    
-    output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email': new_user['email'],
-        'password':new_user['password'], 'address':new_user['address'], 'wish_list':new_user['wish_list'], 'story':new_user['story']}
+    if first_name and last_name and email and password:
+        hashed_password = generate_password_hash(password)
+        users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
+            'password':hashed_password,'address':address}).inserted_id
     
     return jsonify({'result': 'user created successfully'})
 
@@ -52,7 +47,7 @@ def get_all_users():
     output =[]
     for q in users.find():
         output.append({'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
-                    'password':q['password'], 'address':q['address'], 'wish_list':q['wish_list'], 'story':q['story']})
+                    'password':q['password'], 'address':q['address']})
     return jsonify({'result': output})
 
 #get all users names
@@ -65,12 +60,11 @@ def get_all_users_names():
     return jsonify({'result': output})
 
 
-#get all users by country 
+#get users by country 
 @app.route('/users/<country>', methods=['GET'])
 def get_all_users_by_country(country):
     result = find_user('address.country', country)
     return result
-
 
 # get one user by first name
 @app.route('/users/fname/<first_name>', methods=['GET'])
@@ -98,53 +92,72 @@ def delete_user(id):
 @app.route('/users/<id>', methods=['PUT'])
 def update_user(id):
     users = db.users_collection
-    _id = id
+
     first_name = request.json['first_name']
     last_name = request.json['last_name']
     email = request.json['email']
     password =request.json['password']
     address = request.json['address']
-    wish_list = request.json['wish_list']
-    story = request.json['story']
     
-    if first_name and last_name and email and _id and password and address and request.method =='PUT':
-        users.update_one({
-            '_id': ObjectId(_id['$oid']) if '$oid' in _id else ObjectId(_id)}, {'$set': {'first_name': first_name, 
-            'last_name': last_name, 'email':email, 'password': password, 'address': address, 'wish_list': wish_list, 'story':story
-            }}
+    if first_name and last_name and email and password and address:
+        hashed_password = generate_password_hash(password)
+        users.update_one({'_id': ObjectId(id)}, {'$set': {'first_name': first_name, 
+            'last_name': last_name, 'email':email, 'password': hashed_password, 'address': address }}
         )
         return jsonify({'result': 'user updated successfully'})
     else:
         return jsonify({'result': 'not found'})
 
+# create wish for specific user 
+@app.route('/users/<user_id>/wish_list', methods=['POST'])
+def create_wish_for_user(user_id):
+    _id = ObjectId(user_id)
+    owner_id = str(_id)
+    
+    wishes = db.wish_list_collection
+    
+    wish = request.json['wish']
+    story = request.json['story']
+    
+    if wish and story:
+        wishes.insert_one({'wish': wish, 'story': story, 'owner_id':owner_id})
+        
+    # wish_id = wishes.insert_one({'wish': wish_list, 'story': story, 'owner_id':owner_id}).inserted_id
+    # new_wish = wishes.find_one({'_id': wish_id})
+    # output = {'wish': new_wish['wish'], 'story': new_wish['story'], 'owner_id':new_wish['owner_id']}
 
+    return jsonify({'result': 'wish created successfully'}) 
 
+# get specific user wish
+@app.route('/users/<user_id>/wish_list', methods=['GET'])
+def get_users_wish(user_id):
+    _id = ObjectId(user_id)
+    wishes = db.wish_list_collection
+    
+    output =[]
+    for q in wishes.find({'owner_id':user_id}):
+        output.append({ 'wish':q['wish'], 'story':q['story']})
+    return jsonify({'result': output})
 
-
-
-
-
-    # users = db.users_collection
-    # q = users.find_one({'first_name':first_name})
-    # if q:
-    #     output ={'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
-    #                 'address':q['address'], 'wish_list':q['wish_list'],'story':q['story']}
-    # else:
-    #     output = "No result found"
-    # return jsonify({'result': output})
-
-
-
-
-
-# @signup_bp.route('', methods=["POST"])
-# def signup():
-#     return User().signup()
-
-# @signin_bp.route('/signin', methods=["GET"])
-# def signin():
-#     return User().signup()
-
-# @signout_bp.route('/signout', methods=["GET"])
-# def signin():
-#     return User().signup()
+# update wishes
+@app.route('/users/<user_id>/wish_list', methods=['PUT'])
+def update_users_wish(user_id):
+    _id = ObjectId(user_id)
+    wishes = db.wish_list_collection
+    
+    wish = request.json['wish']
+    story = request.json['story']
+    
+    if wish and story:
+        wishes.update_one({'_id':ObjectId(user_id)},{'$set':{'wish':wish, 
+                        'story':story}})
+        return jsonify({'result': 'wish updated successfully'})
+    else:
+        return jsonify({'result': 'not found'})    
+    
+#delete wish
+@app.route('/users/<user_id>/wish_list', methods=['DELETE'])
+def delete_users_wish(user_id):
+    wishes = db.wish_list_collection
+    wishes.delete_one({'_id': ObjectId(user_id)})
+    return jsonify({'result': 'wish deleted  successfully'})
