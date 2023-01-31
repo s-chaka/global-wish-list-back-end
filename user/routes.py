@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify, Response, Blueprint
-from flask_pymongo import PyMongo, ObjectId
+from flask_pymongo import PyMongo #ObjectId
 from app import db
 from app import app
 from user.models import User
 from werkzeug.security import generate_password_hash, check_password_hash
-
+from bson import ObjectId
 # Blueprint
 # users_bp = Blueprint('users', __name__)
 # @users_bp.route('/users', methods=['POST']) 
@@ -35,8 +35,9 @@ def create_user():
     
     if first_name and last_name and email and password:
         hashed_password = generate_password_hash(password)
-        users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
+        id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':hashed_password,'address':address}).inserted_id
+        print(str(ObjectId(id)))
     
     return jsonify({'result': 'user created successfully'})
 
@@ -46,7 +47,7 @@ def get_all_users():
     users = db.users_collection
     output =[]
     for q in users.find():
-        output.append({'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
+        output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
                     'password':q['password'], 'address':q['address']})
     return jsonify({'result': output})
 
@@ -57,6 +58,18 @@ def get_all_users_names():
     output =[]
     for q in users.find():
         output.append({'first_name': q['first_name'], 'last_name': q['last_name']})
+    return jsonify({'result': output})
+
+
+#get user by id not working
+@app.route('/users/<user_id>', methods=['GET'])
+def get_user_by_id(user_id):
+    _id =str(ObjectId(user_id))
+    users = db.users_collection
+    output =[]
+    print(_id)
+    for q in users.find({'user_id':_id}):
+        output.append({'user_id':q['user_id'],'first_name': q['first_name'], 'last_name': q['last_name']})
     return jsonify({'result': output})
 
 
@@ -107,9 +120,12 @@ def update_user(id):
         return jsonify({'result': 'user updated successfully'})
     else:
         return jsonify({'result': 'not found'})
+    
+#********************************** WISH ********************************************#
 
 # create wish for specific user 
-@app.route('/users/<user_id>/wish_list', methods=['POST'])
+
+@app.route('/users/<user_id>/wishlist', methods=['POST'])
 def create_wish_for_user(user_id):
     _id = ObjectId(user_id)
     owner_id = str(_id)
@@ -129,8 +145,8 @@ def create_wish_for_user(user_id):
     return jsonify({'result': 'wish created successfully'}) 
 
 # get specific user wish
-@app.route('/users/<user_id>/wish_list', methods=['GET'])
-def get_users_wish(user_id):
+@app.route('/users/<user_id>/wishlist', methods=['GET'])
+def get_users_wish_by_id(user_id):
     _id = ObjectId(user_id)
     wishes = db.wish_list_collection
     
@@ -139,8 +155,19 @@ def get_users_wish(user_id):
         output.append({ 'wish':q['wish'], 'story':q['story']})
     return jsonify({'result': output})
 
+# it's working
+@app.route("/users/wishes", methods=['GET'])
+def get_users_wish():
+    # _id = ObjectId(user_id)
+    wishes = db.wish_list_collection
+    
+    output =[]
+    for q in wishes.find():
+        output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'wish':q['wish'], 'story':q['story']})
+    return jsonify({'result': output})
+
 # update wishes
-@app.route('/users/<user_id>/wish_list', methods=['PUT'])
+@app.route('/users/<user_id>/wishlist', methods=['PUT'])
 def update_users_wish(user_id):
     _id = ObjectId(user_id)
     wishes = db.wish_list_collection
@@ -156,8 +183,8 @@ def update_users_wish(user_id):
         return jsonify({'result': 'not found'})    
     
 #delete wish
-@app.route('/users/<user_id>/wish_list', methods=['DELETE'])
-def delete_users_wish(user_id):
+@app.route('/users/<wish_id>/wishlist', methods=['DELETE'])
+def delete_users_wish(wish_id):
     wishes = db.wish_list_collection
-    wishes.delete_one({'_id': ObjectId(user_id)})
+    wishes.delete_one({'_id': ObjectId(wish_id)})
     return jsonify({'result': 'wish deleted  successfully'})
