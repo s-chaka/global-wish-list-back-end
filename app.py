@@ -15,7 +15,7 @@ CORS(app)
 
 password = os.environ.get("MONGODB_PWD")
 connection_string = f'mongodb+srv://sdatabase:{password}@mydb.6b0j3ai.mongodb.net/?retryWrites=true&w=majority'
-client = MongoClient(connection_string, ssl=True,ssl_cert_reqs=ssl.CERT_NONE)
+client = MongoClient(connection_string)
 
 db = client.global_wish_list
 users = db.users_collection
