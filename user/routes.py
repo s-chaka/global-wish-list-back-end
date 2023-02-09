@@ -32,11 +32,12 @@ def create_user():
     email = request.json['email']
     password =request.json['password']
     address = request.json['address']
+
     
     if first_name and last_name and email and password:
-        hashed_password = generate_password_hash(password)
+        # hashed_password = generate_password_hash(password)
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
-            'password':hashed_password,'address':address}).inserted_id
+            'password':password,'address':address}).inserted_id
         print(str(ObjectId(id)))
     
     return jsonify({'result': 'user created successfully'})
@@ -113,9 +114,9 @@ def update_user(id):
     address = request.json['address']
     
     if first_name and last_name and email and password and address:
-        hashed_password = generate_password_hash(password)
+        # hashed_password = generate_password_hash(password)
         users.update_one({'_id': ObjectId(id)}, {'$set': {'first_name': first_name, 
-            'last_name': last_name, 'email':email, 'password': hashed_password, 'address': address }}
+            'last_name': last_name, 'email':email, 'password': password, 'address': address }}
         )
         return jsonify({'result': 'user updated successfully'})
     else:
@@ -134,9 +135,11 @@ def create_wish_for_user(user_id):
     
     wish = request.json['wish']
     story = request.json['story']
+    interested = False
+    satisfied = False
     
     if wish and story:
-        wishes.insert_one({'wish': wish, 'story': story, 'owner_id':owner_id})
+        wishes.insert_one({'wish': wish, 'story': story, 'owner_id':owner_id, 'interested':interested, 'satisfied':satisfied})
         
     # wish_id = wishes.insert_one({'wish': wish_list, 'story': story, 'owner_id':owner_id}).inserted_id
     # new_wish = wishes.find_one({'_id': wish_id})
@@ -152,7 +155,8 @@ def get_users_wish_by_id(user_id):
     
     output =[]
     for q in wishes.find({'owner_id':user_id}):
-        output.append({ 'wish':q['wish'], 'story':q['story']})
+        output.append({ 'wish':q['wish'], 'story':q['story'], 'interested':q['interested'],
+                    'satisfied':q['satisfied'] })
     return jsonify({'result': output})
 
 # it's working
@@ -163,21 +167,22 @@ def get_users_wish():
     
     output =[]
     for q in wishes.find():
-        output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'wish':q['wish'], 'story':q['story']})
+        output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'wish':q['wish'], 'story':q['story'],'interested':q['interested'],'satisfied':q['satisfied']})
     return jsonify({'result': output})
-
+# 'interested':q['interested'],'satisfied':q['satisfied']
 # update wishes
-@app.route('/users/<user_id>/wishlist', methods=['PUT'])
-def update_users_wish(user_id):
-    _id = ObjectId(user_id)
+@app.route('/users/<wish_id>/wishlist', methods=['PUT'])
+def update_users_wish(wish_id):
+    _id = ObjectId(wish_id)
     wishes = db.wish_list_collection
-    
     wish = request.json['wish']
     story = request.json['story']
+    interested = request.json["interested"]
+    satisfied = request.json["satisfied"]
     
     if wish and story:
-        wishes.update_one({'_id':ObjectId(user_id)},{'$set':{'wish':wish, 
-                        'story':story}})
+        wishes.update_one({'_id':ObjectId(wish_id)},{'$set':{'wish':wish, 
+                        'story':story, 'interested':interested,'satisfied':satisfied}})
         return jsonify({'result': 'wish updated successfully'})
     else:
         return jsonify({'result': 'not found'})    
