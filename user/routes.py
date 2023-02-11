@@ -1,10 +1,13 @@
-from flask import Flask, request, jsonify, Response, Blueprint
+from flask import Flask, request, jsonify, Response, make_response, Blueprint
 from flask_pymongo import PyMongo #ObjectId
 from app import db
 from app import app
 from user.models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
+from bson.objectid import ObjectId
+from bson import json_util
+from flask import json
 # Blueprint
 # users_bp = Blueprint('users', __name__)
 # @users_bp.route('/users', methods=['POST']) 
@@ -38,9 +41,17 @@ def create_user():
         # hashed_password = generate_password_hash(password)
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':password,'address':address}).inserted_id
-        print(str(ObjectId(id)))
-    
-    return jsonify({'result': 'user created successfully'})
+        idd=(str(ObjectId(id)))
+        
+
+    # '_id': ObjectId('63e6dcf7cba82805db44301c')
+    new_user = users.find_one({'_id': id})
+    print(new_user)
+    output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
+            'password':new_user['password'],'address':new_user['address']}
+
+    # return jsonify({'result': output})
+    return Response(json.dumps(new_user,default=str),mimetype="application/json")
 
 #get all users information
 @app.route('/users', methods=['GET'])
@@ -63,15 +74,33 @@ def get_all_users_names():
 
 
 #get user by id not working
-@app.route('/users/<user_id>', methods=['GET'])
-def get_user_by_id(user_id):
-    _id =str(ObjectId(user_id))
-    users = db.users_collection
-    output =[]
-    print(_id)
-    for q in users.find({'user_id':_id}):
-        output.append({'user_id':q['user_id'],'first_name': q['first_name'], 'last_name': q['last_name']})
-    return jsonify({'result': output})
+@app.route('/users/<string:id>', methods=['GET'])
+def get_user_by_id(id):
+    data = db.users_collection.find_one({'_id':ObjectId(id)})
+    id = data['_id']
+    first_name = data['first_name']
+    last_name = data['last_name']
+    email = data['email']
+    address= data['address']
+    dataDict={
+        'id':str(id),
+        'first_name':first_name,
+        'last_name': last_name,
+        'email': email,
+        'address': address
+    }
+    return jsonify(dataDict)
+    # country = data['country']
+    # city =data['city']
+    # state=data['state']
+    # streetAdress= data['street_address']
+    # _id =str(ObjectId(user_id))
+    # users = db.users_collection
+    # output =[]
+    # print(_id)
+    # for q in users.find({'user_id':_id}):
+    #     output.append({'user_id':q['user_id'],'first_name': q['first_name'], 'last_name': q['last_name']})
+    # return jsonify({'result': output})
 
 
 #get users by country 
@@ -95,7 +124,7 @@ def get_one_user_by_last_name(last_name):
 
 
 
-# delete one user
+# delete user
 @app.route('/users/<id>', methods=['DELETE'])
 def delete_user(id):
     users = db.users_collection
@@ -132,14 +161,14 @@ def create_wish_for_user(user_id):
     owner_id = str(_id)
     
     wishes = db.wish_list_collection
-    
+    url = request.json['url']
     wish = request.json['wish']
     story = request.json['story']
     interested = False
     satisfied = False
     
     if wish and story:
-        wishes.insert_one({'wish': wish, 'story': story, 'owner_id':owner_id, 'interested':interested, 'satisfied':satisfied})
+        wishes.insert_one({'url':url,'wish': wish, 'story': story, 'owner_id':owner_id, 'interested':interested, 'satisfied':satisfied})
         
     # wish_id = wishes.insert_one({'wish': wish_list, 'story': story, 'owner_id':owner_id}).inserted_id
     # new_wish = wishes.find_one({'_id': wish_id})
@@ -155,7 +184,7 @@ def get_users_wish_by_id(user_id):
     
     output =[]
     for q in wishes.find({'owner_id':user_id}):
-        output.append({ 'wish':q['wish'], 'story':q['story'], 'interested':q['interested'],
+        output.append({'url':q['url'], 'wish':q['wish'], 'story':q['story'], 'interested':q['interested'],
                     'satisfied':q['satisfied'] })
     return jsonify({'result': output})
 
@@ -167,7 +196,7 @@ def get_users_wish():
     
     output =[]
     for q in wishes.find():
-        output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'wish':q['wish'], 'story':q['story'],'interested':q['interested'],'satisfied':q['satisfied']})
+        output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'url':q['url'],'wish':q['wish'], 'story':q['story'],'interested':q['interested'],'satisfied':q['satisfied']})
     return jsonify({'result': output})
 # 'interested':q['interested'],'satisfied':q['satisfied']
 # update wishes
