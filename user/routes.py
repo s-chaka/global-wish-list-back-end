@@ -1,16 +1,14 @@
 from flask import Flask, request, jsonify, Response, make_response, Blueprint
-from flask_pymongo import PyMongo #ObjectId
+from flask_pymongo import PyMongo 
 from app import db
 from app import app
-from user.models import User
+# from user.models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
 from bson.objectid import ObjectId
 from bson import json_util
 from flask import json
-# Blueprint
-# users_bp = Blueprint('users', __name__)
-# @users_bp.route('/users', methods=['POST']) 
+
 
 
 # helper function
@@ -41,19 +39,16 @@ def create_user():
         # hashed_password = generate_password_hash(password)
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':password,'address':address}).inserted_id
-        idd=(str(ObjectId(id)))
-        
-
-    # '_id': ObjectId('63e6dcf7cba82805db44301c')
+        # idd=(str(ObjectId(id)))
+    
     new_user = users.find_one({'_id': id})
-    print(new_user)
+
     output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
             'password':new_user['password'],'address':new_user['address']}
 
-    # return jsonify({'result': output})
     return Response(json.dumps(new_user,default=str),mimetype="application/json")
 
-#get all users information
+#get all users 
 @app.route('/users', methods=['GET'])
 def get_all_users():
     users = db.users_collection
@@ -90,18 +85,6 @@ def get_user_by_id(id):
         'address': address
     }
     return jsonify(dataDict)
-    # country = data['country']
-    # city =data['city']
-    # state=data['state']
-    # streetAdress= data['street_address']
-    # _id =str(ObjectId(user_id))
-    # users = db.users_collection
-    # output =[]
-    # print(_id)
-    # for q in users.find({'user_id':_id}):
-    #     output.append({'user_id':q['user_id'],'first_name': q['first_name'], 'last_name': q['last_name']})
-    # return jsonify({'result': output})
-
 
 #get users by country 
 @app.route('/users/<country>', methods=['GET'])
@@ -153,13 +136,12 @@ def update_user(id):
     
 #********************************** WISH ********************************************#
 
-# create wish for specific user 
+# create wish by user id 
 
 @app.route('/users/<user_id>/wishlist', methods=['POST'])
 def create_wish_for_user(user_id):
     _id = ObjectId(user_id)
-    owner_id = str(_id)
-    
+    owner_id = str(_id) 
     wishes = db.wish_list_collection
     url = request.json['url']
     wish = request.json['wish']
@@ -170,13 +152,9 @@ def create_wish_for_user(user_id):
     if wish and story:
         wishes.insert_one({'url':url,'wish': wish, 'story': story, 'owner_id':owner_id, 'interested':interested, 'satisfied':satisfied})
         
-    # wish_id = wishes.insert_one({'wish': wish_list, 'story': story, 'owner_id':owner_id}).inserted_id
-    # new_wish = wishes.find_one({'_id': wish_id})
-    # output = {'wish': new_wish['wish'], 'story': new_wish['story'], 'owner_id':new_wish['owner_id']}
-
     return jsonify({'result': 'wish created successfully'}) 
 
-# get specific user wish
+# get user wish by id
 @app.route('/users/<user_id>/wishlist', methods=['GET'])
 def get_users_wish_by_id(user_id):
     _id = ObjectId(user_id)
@@ -188,17 +166,17 @@ def get_users_wish_by_id(user_id):
                     'satisfied':q['satisfied'] })
     return jsonify({'result': output})
 
-# it's working
+# Get users wish
 @app.route("/users/wishes", methods=['GET'])
 def get_users_wish():
-    # _id = ObjectId(user_id)
+
     wishes = db.wish_list_collection
     
     output =[]
     for q in wishes.find():
         output.append({ '_id':str(ObjectId(q['_id'])),'owner_id':q['owner_id'],'url':q['url'],'wish':q['wish'], 'story':q['story'],'interested':q['interested'],'satisfied':q['satisfied']})
     return jsonify({'result': output})
-# 'interested':q['interested'],'satisfied':q['satisfied']
+
 # update wishes
 @app.route('/users/<wish_id>/wishlist', methods=['PUT'])
 def update_users_wish(wish_id):
