@@ -8,6 +8,7 @@ from bson import ObjectId
 from bson.objectid import ObjectId
 from bson import json_util
 from flask import json
+from flask import Blueprint
 
 
 app = Blueprint('app', __name__)
