@@ -10,7 +10,7 @@ from bson import json_util
 from flask import json
 
 
-
+app = Blueprint('app', __name__)
 # helper function
 def find_user(field,value ):
     users = db.users_collection
