@@ -20,8 +20,8 @@ client = MongoClient(connection_string)
 db = client.global_wish_list
 users = db.users_collection
 
-from user import routes
-app.register_blueprint(routes.app)
+from user.routes import app as user_app
+app.register_blueprint(user_app)
 
 if __name__ == '__main__':
     app.run(debug=True)
