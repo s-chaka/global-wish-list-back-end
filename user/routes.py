@@ -23,6 +23,16 @@ def find_user(field,value ):
     else:
         return jsonify({'result': "No result found"})
 
+#get all users 
+@app.route('/users', methods=['GET'])
+def get_all_users():
+    users = db.users_collection
+    output =[]
+    for q in users.find():
+        output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
+                    'password':q['password'], 'address':q['address']})
+    return jsonify({'result': output})
+
 # create user 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -48,15 +58,6 @@ def create_user():
 
     return Response(json.dumps(new_user,default=str),mimetype="application/json")
 
-#get all users 
-@app.route('/users', methods=['GET'])
-def get_all_users():
-    users = db.users_collection
-    output =[]
-    for q in users.find():
-        output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
-                    'password':q['password'], 'address':q['address']})
-    return jsonify({'result': output})
 
 #get all users names
 @app.route('/users/names', methods=['GET'])
