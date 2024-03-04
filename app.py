@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from flask_pymongo import PyMongo ,ObjectId
-# import pymongo
 import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -14,7 +13,6 @@ app = Flask(__name__)
 CORS(app)
 
 password = os.environ.get("MONGODB_PWD")
-# connection_string = f'mongodb+srv://sdatabase:{password}@mydb.6b0j3ai.mongodb.net/?retryWrites=true&w=majority'
 connection_string = f'mongodb+srv://sdatabase:{password}@mydb.6b0j3ai.mongodb.net/'
 client = MongoClient(connection_string)
 

@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, Response, make_response, Blueprint
 from flask_pymongo import PyMongo 
 from app import db
 from app import app
-# from user.models import User
 from werkzeug.security import generate_password_hash, check_password_hash
 from bson import ObjectId
 from bson.objectid import ObjectId
@@ -49,10 +48,8 @@ def create_user():
 
     
     if first_name and last_name and email and password:
-        # hashed_password = generate_password_hash(password)
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':password,'address':address}).inserted_id
-        # idd=(str(ObjectId(id)))
     
     new_user = users.find_one({'_id': id})
 
@@ -62,7 +59,7 @@ def create_user():
     return Response(json.dumps(new_user,default=str),mimetype="application/json")
 
 
-#get all users names
+#get all users by name
 @app.route('/users/names', methods=['GET'])
 def get_all_users_names():
     users = db.users_collection
@@ -72,7 +69,7 @@ def get_all_users_names():
     return jsonify({'result': output})
 
 
-#get user by id not working
+#get user by id
 @app.route('/users/<string:id>', methods=['GET'])
 def get_user_by_id(id):
     data = db.users_collection.find_one({'_id':ObjectId(id)})
