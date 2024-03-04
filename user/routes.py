@@ -18,8 +18,8 @@ def get_all_users():
     users = db.users_collection
     output =[]
     for q in users.find():
-        output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'], 'email':q['email'],
-                    'password':q['password'], 'address':q['address']})
+        output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'],
+        'email':q['email'], 'address':q['address']})
     return jsonify({'result': output})
 
 # helper function
@@ -34,7 +34,6 @@ def find_user(field,value ):
     else:
         return jsonify({'result': "No result found"})
 
-
 # create user 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -46,7 +45,6 @@ def create_user():
     password =request.json['password']
     address = request.json['address']
 
-    
     if first_name and last_name and email and password:
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':password,'address':address}).inserted_id
@@ -58,7 +56,6 @@ def create_user():
 
     return Response(json.dumps(new_user,default=str),mimetype="application/json")
 
-
 #get all users by name
 @app.route('/users/names', methods=['GET'])
 def get_all_users_names():
@@ -67,7 +64,6 @@ def get_all_users_names():
     for q in users.find():
         output.append({'first_name': q['first_name'], 'last_name': q['last_name']})
     return jsonify({'result': output})
-
 
 #get user by id
 @app.route('/users/<string:id>', methods=['GET'])
@@ -88,7 +84,7 @@ def get_user_by_id(id):
     return jsonify(dataDict)
 
 #get users by country 
-@app.route('/users/<country>', methods=['GET'])
+@app.route('/users/country/<country>', methods=['GET'])
 def get_all_users_by_country(country):
     result = find_user('address.country', country)
     return result
@@ -99,15 +95,12 @@ def get_one_user_by_first_name(first_name):
     result = find_user('first_name', first_name)
     return result
 
-
 # get one user by last name
 @app.route('/users/lname/<last_name>', methods=['GET'])
 def get_one_user_by_last_name(last_name):
     result = find_user('last_name', last_name)
     return result
-
-
-
+    
 # delete user
 @app.route('/users/<id>', methods=['DELETE'])
 def delete_user(id):
