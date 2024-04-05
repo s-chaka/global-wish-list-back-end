@@ -10,7 +10,9 @@ load_dotenv(find_dotenv())
 
 app = Flask(__name__)
 # app.config['CORS_HEADERS'] = 'Content-Type'
-CORS(app)
+# CORS(app)
+CORS(app, resources={r"/api/*": {"origins": "https://capstone-994fe.web.app/"}})
+
 
 password = os.environ.get("MONGODB_PWD")
 connection_string = f'mongodb+srv://sdatabase:{password}@mydb.6b0j3ai.mongodb.net/'
