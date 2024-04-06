@@ -19,7 +19,7 @@ def get_all_users():
     output =[]
     for q in users.find():
         output.append({'_id':str(ObjectId(q['_id'])),'first_name': q['first_name'], 'last_name': q['last_name'],
-        'email':q['email'], 'address':q['address']})
+        'email':q['email'], 'password': q['password'], 'address':q['address']})
     return jsonify({'result': output})
 
 # helper function
@@ -27,7 +27,7 @@ def find_user(field,value ):
     users = db.users_collection
     output =[]
     for q in users.find({field:value}):
-        output.append({'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'],
+        output.append({'first_name': q['first_name'], 'last_name': q['last_name'],'email':q['email'], 'password': q['password'],
                     'address':q['address']})
     if output:
         return jsonify({'result': output})
