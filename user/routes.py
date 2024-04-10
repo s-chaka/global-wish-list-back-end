@@ -8,6 +8,7 @@ from bson.objectid import ObjectId
 from bson import json_util
 from flask import json
 from flask import Blueprint
+import re 
 
 
 app = Blueprint('app', __name__)
@@ -34,6 +35,18 @@ def find_user(field,value ):
     else:
         return jsonify({'result': "No result found"})
 
+# validate zip code
+def validate_zip_code(zipCode):
+    pattern = r'^\d{5}$'  # Ensure exactly 5 digits
+    return bool(re.match(pattern, zipCode))\
+# validate password
+def validate_password(password):
+    return len(password) >=6 
+# validate email
+def validate_email(email):
+    pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
+    return bool(re.match(pattern, email))
+
 # create user 
 @app.route('/users', methods=['POST'])
 def create_user():
@@ -45,16 +58,32 @@ def create_user():
     password =request.json['password']
     address = request.json['address']
 
-    if first_name and last_name and email and password:
+    if first_name and last_name and email and password and address:
+        if not validate_email(email):
+            return jsonify({'error': 'Invalid email address'}), 400
+
+        if not validate_password(password):
+            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+            
+        if 'zipCode' not in address:
+            return jsonify({'error': 'Missing zipCode field'}), 400
+
+        zipCode = address['zipCode']
+
+        if not validate_zip_code(zipCode):
+            return jsonify({'error': 'Invalid zip code format'}), 400
+   
         id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
             'password':password,'address':address}).inserted_id
-    
-    new_user = users.find_one({'_id': id})
+        
+        new_user = users.find_one({'_id': id})
 
-    output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
-            'password':new_user['password'],'address':new_user['address']}
+        output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
+                'password':new_user['password'],'address':new_user['address']}
 
-    return Response(json.dumps(new_user,default=str),mimetype="application/json")
+        return Response(json.dumps(new_user,default=str),mimetype="application/json")
+    else:
+        return jsonify({'error': 'Missing required fields'}), 400
 
 #get all users by name
 @app.route('/users/names', methods=['GET'])
