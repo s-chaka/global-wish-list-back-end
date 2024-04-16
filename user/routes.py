@@ -1,17 +1,55 @@
-from flask import Flask, request, jsonify, Response, make_response, Blueprint
-from flask_pymongo import PyMongo 
 from app import db
-from app import app
+from flask import Flask, request, jsonify, Response, make_response, Blueprint, json
+from flask_pymongo import PyMongo 
 from werkzeug.security import generate_password_hash, check_password_hash
-from bson import ObjectId
+# from bson import ObjectId
 from bson.objectid import ObjectId
-from bson import json_util
-from flask import json
-from flask import Blueprint
+# from bson import json_util
+from app import bcrypt
 import re 
+import os
+
 
 
 app = Blueprint('app', __name__)
+
+# create user 
+@app.route('/users', methods=['POST'])
+def create_user():
+    users = db.users_collection
+    
+    first_name = request.json['first_name']
+    last_name = request.json['last_name']
+    email = request.json['email']
+    password =request.json['password']
+    address = request.json['address']
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+    if first_name and last_name and email and password and address:
+        if not validate_email(email):
+            return jsonify({'error': 'Invalid email address'}), 400
+
+        if not validate_password(password):
+            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
+            
+        if 'zipCode' not in address:
+            return jsonify({'error': 'Missing zipCode field'}), 400
+
+        zipCode = address['zipCode']
+
+        if not validate_zip_code(zipCode):
+            return jsonify({'error': 'Invalid zip code format'}), 400
+   
+        id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
+            'password':hashed_password,'address':address}).inserted_id
+        
+        new_user = users.find_one({'_id': id})
+
+        output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
+                'password':new_user['password'],'address':new_user['address']}
+
+        return Response(json.dumps(new_user,default=str),mimetype="application/json")
+    else:
+        return jsonify({'error': 'Missing required fields'}), 400
 
 #get all users 
 @app.route('/users', methods=['GET'])
@@ -47,43 +85,6 @@ def validate_email(email):
     pattern = r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$'
     return bool(re.match(pattern, email))
 
-# create user 
-@app.route('/users', methods=['POST'])
-def create_user():
-    users = db.users_collection
-    
-    first_name = request.json['first_name']
-    last_name = request.json['last_name']
-    email = request.json['email']
-    password =request.json['password']
-    address = request.json['address']
-
-    if first_name and last_name and email and password and address:
-        if not validate_email(email):
-            return jsonify({'error': 'Invalid email address'}), 400
-
-        if not validate_password(password):
-            return jsonify({'error': 'Password must be at least 6 characters long'}), 400
-            
-        if 'zipCode' not in address:
-            return jsonify({'error': 'Missing zipCode field'}), 400
-
-        zipCode = address['zipCode']
-
-        if not validate_zip_code(zipCode):
-            return jsonify({'error': 'Invalid zip code format'}), 400
-   
-        id = users.insert_one({'first_name': first_name, 'last_name': last_name, 'email': email,
-            'password':password,'address':address}).inserted_id
-        
-        new_user = users.find_one({'_id': id})
-
-        output = {'first_name': new_user['first_name'], 'last_name': new_user['last_name'], 'email':new_user['email'],
-                'password':new_user['password'],'address':new_user['address']}
-
-        return Response(json.dumps(new_user,default=str),mimetype="application/json")
-    else:
-        return jsonify({'error': 'Missing required fields'}), 400
 
 #get all users by name
 @app.route('/users/names', methods=['GET'])
@@ -147,11 +148,10 @@ def update_user(id):
     email = request.json['email']
     password =request.json['password']
     address = request.json['address']
-    
+    hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
     if first_name and last_name and email and password and address:
-        # hashed_password = generate_password_hash(password)
         users.update_one({'_id': ObjectId(id)}, {'$set': {'first_name': first_name, 
-            'last_name': last_name, 'email':email, 'password': password, 'address': address }}
+            'last_name': last_name, 'email':email, 'password': hashed_password, 'address': address }}
         )
         return jsonify({'result': 'user updated successfully'})
     else:

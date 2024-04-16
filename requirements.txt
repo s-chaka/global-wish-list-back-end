@@ -11,3 +11,4 @@ pymongo==4.3.3
 python-dotenv==0.21.1
 six==1.16.0
 Werkzeug==2.2.2
+Flask-Bcrypt==0.7.1 
