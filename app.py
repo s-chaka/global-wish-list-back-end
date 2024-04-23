@@ -2,7 +2,6 @@ from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from pymongo import MongoClient
 from flask_pymongo import PyMongo ,ObjectId
-from flask_bcrypt import Bcrypt
 import os
 from dotenv import load_dotenv, find_dotenv
 load_dotenv(find_dotenv())
@@ -10,7 +9,6 @@ load_dotenv(find_dotenv())
 
 
 app = Flask(__name__)
-bcrypt = Bcrypt(app)
 # app.config['CORS_HEADERS'] = 'Content-Type'
 CORS(app)
 
